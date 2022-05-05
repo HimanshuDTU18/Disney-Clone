@@ -1,12 +1,13 @@
 import styled from 'styled-components'
-
+import { useEffect } from 'react';
 import { useDispatch ,useSelector } from 'react-redux';
 import{useNavigate} from 'react-router-dom';
 import {
   selectUserName,
   selectUserEmail,
   selectUserPhoto,
-  setUserLoginDetails
+  setUserLoginDetails,
+  setSignOutState
 } from '../features/user/userSlice'
 
 import app from './firebase'
@@ -21,17 +22,28 @@ const Header = (props )=>{
   const userName = useSelector(selectUserName);
   const userPhoto = useSelector(selectUserPhoto);
 
- 
+  useEffect(()=>{
+    auth.onAuthStateChanged(async (user)=>{
+      if(user){
+        setUser(user);
+        navigate('/home');
+      }
+    });
+  },[userName]);
+
   const handleAuth = ()=>{
+
+    if(!userName){
         signInWithPopup(auth, provider)
         .then((result) => {
-         
          setUser(result.user);
-        }).catch((error) => {
-          
-          // ...
-        });
-
+        })
+      }else if(userName){
+        auth.signOut().then(()=>{
+          dispatch(setSignOutState());
+          navigate("/");
+        }).catch((err) => alert(err.message));
+      }
 
     }
     const setUser = (user)=>{
@@ -80,8 +92,14 @@ const Header = (props )=>{
               <span>SERIES</span>
             </a>
              </NavMenu> 
+             <SignOut>
+               <UserImg src ={userPhoto} alt={userName}/>
+               <DropDown>
+                   <span onClick={handleAuth}>Sign Out</span>
+               </DropDown>
+             </SignOut>
+
              
-             <UserImg src={userPhoto} alt={userName} />
             </>
             )}
         </Nav>
@@ -121,7 +139,6 @@ const NavMenu = styled.div`
     align-items: center;
     display: flex;
     height: 100%;
-    
     flex-flow: row nowrap;
     justify-content: flex-end;
     margin: 0px;
@@ -140,7 +157,6 @@ const NavMenu = styled.div`
         height: 20px;
         min-height: 20px;
         z-index: auto;
-        
     }
 
     span{
@@ -203,6 +219,41 @@ const Login = styled.a`
 
 const UserImg = styled.img`
   height: 100%;
+  border-radius:50%;
+  width: 100%;
+  
+`;
+
+const DropDown = styled.div`
+  position: absolute;
+  top:48px;
+  right: 0px;
+  background-color: rgb(19,19,19);
+  border: 1px solid rgba(151,151,151,0.34);
+  border-radius: 4px;
+  box-shadow: rgb(0 0 0 / 50%) 0px 0px 18px 0px;
+  padding:10px;
+  font-size: 14px;
+  letter-spacing: 3px;
+  width: 103px;
+  opacity: 0;
+  
+
+`;
+
+const SignOut = styled.div`
+  position: relative;
+  height: 48px;
+  width: 48px;
+ cursor: pointer;
+  
+  &:hover{
+    ${DropDown}{
+      opacity: 1;
+      transition-duration: 1s;
+    }
+  }
+  
 `;
 
 
